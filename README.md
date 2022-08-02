@@ -41,6 +41,4 @@ Latch Verified
 
 </html>
 
-...
-
 ## Workflow Anatomy
