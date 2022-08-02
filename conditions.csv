@@ -1,0 +1,9 @@
+Sample Id,Sample Name,Condition
+GM12878_REP1,Test 1,Control
+GM12878_REP2,Test 2,Treatment
+H1_REP1,Test 3,Control
+H1_REP2,Test 4,Treatment
+K562_REP1,Test 5,Control
+K562_REP2,Test 6,Treatment
+MCF7_REP1,Test 7,Control
+MCF7_REP2,Test 8,Treatment

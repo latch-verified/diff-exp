@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{reportName}}&mdash;DESeq2 Report</title>
+    <style>
+      @import url("https://rsms.me/inter/inter.css");
+      html {
+        font-family: "Inter", sans-serif;
+      }
+      @supports (font-variation-settings: normal) {
+        html {
+          font-family: "Inter var", sans-serif;
+        }
+      }
+
+      body {
+        color: #5e6c84;
+        letter-spacing: 0.012em;
+      }
+      h1 {
+        color: #000;
+        margin: 0;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        font-weight: 400;
+
+        font-size: 2.86rem;
+        line-height: 3.43rem;
+      }
+      h2 {
+        color: #101426;
+        margin: 0;
+        margin-bottom: 8px;
+        font-weight: 400;
+
+        font-size: 2.29rem;
+        line-height: 2.86rem;
+      }
+      h3 {
+        color: #101426;
+        margin: 0;
+        margin-bottom: 8px;
+        font-weight: 400;
+
+        font-size: 1.71rem;
+        line-height: 2.29rem;
+      }
+      p {
+        margin: 0;
+        margin-bottom: 12px;
+      }
+      iframe {
+        border: none;
+      }
+
+      .loud {
+        color: #101426;
+        font-size: 125%;
+      }
+
+      .f {
+        display: flex;
+      }
+      .c {
+        flex-direction: column;
+      }
+      .m {
+        max-width: 800px;
+        margin: auto;
+      }
+      .s {
+        margin-bottom: 60px;
+      }
+
+      img {
+        max-width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="f c m">
+      <h1>{{reportName}}</h1>
+      <h2>General</h2>
+      <p class="loud">
+        <em>Note:</em> all plots in this section use normalized counts adjusted
+        for read length and other sequencing biases.
+      </p>
+      <div class="f c s">
+        <h3>Counts Correlation Across Samples</h3>
+        <p>
+          In this graph the samples are clustered in a dendogram such that
+          groups of highly correlated samples are displayed together and groups
+          of less highly correlated samples are displayed apart.
+        </p>
+        <p>
+          Samples with similar experimental conditions should have similar gene
+          expression, which will lead to highly correlated counts.
+        </p>
+        <p>
+          If different experimental conditions appear in one cluster, the
+          condition might not have had a significant effect on gene expression.
+          Vice versa, if one experimental condition is split across multiple
+          clusters then the variation within the group might be very high and
+          overshadow the effect of the condition in the analysis.
+        </p>
+        <p>
+          In the ideal case, "control" and "treatment" samples (for some
+          appropriate notion of "control" and "treatment") will show up as
+          distinct groups in the plot. With multiple treatments there will be
+          multiple groups. In multivariate experiments the samples should
+          cluster according to "Comparison Cluster" variables.
+        </p>
+        <iframe
+          id="sample-correlation"
+          srcdoc="{{sampleCorrelationData}}"
+          style="width: 100%; aspect-ratio: 1/1"
+        ></iframe>
+      </div>
+      <div class="f c s">
+        <h3>Heatmap of Genes with Highest Counts</h3>
+        <p>
+          This plot gives a rough visual representation of differences in gene
+          expression between samples. It is a clustered heatmap of the z-score
+          of normalized counts using the (at most) top 100 most-expressed genes,
+          where genes are ranked based on their maximal expression across all
+          samples. This naive definition of "most interesting" genes is
+          well-suited for quality control since highly expressed genes are
+          unlikely to show spurious patterns as their counts are less influenced
+          by noise which tends to be low in magnitude.
+        </p>
+        <p>
+          Genes that cluster together have similar expression across samples.
+          Using knowledge of genes relevant to the experiment and the analyzed
+          organism it is possible to spot discrepancies between the pattern of
+          gene expression and the expected impact of varying the experimental
+          condition.
+        </p>
+        <p>
+          Avoid making specific conclusions based on this plot as it does not
+          include the statistical analysis necessary to estimate significance
+          and the true magnitude of effects. Refer to contrast reports between
+          specific experimental conditions for detailed results including P
+          values and fold change.
+        </p>
+        <iframe
+          id="counts-heatmap"
+          srcdoc="{{countsMatrixHeatmap}}"
+          style="width: 100%; aspect-ratio: 1/2; max-height: 100vh"
+        ></iframe>
+        <!-- fixme(maximsmol): display this if genes of interest is set -->
+        <div id="cmh-goi" style="display: none">
+          <p>Genes of Interest</p>
+          <iframe
+            id="counts-heatmap-goi"
+            srcdoc="{{countsMatrixHeatmapGOI}}"
+            style="width: 100%; aspect-ratio: 1/2; max-height: 100vh"
+          ></iframe>
+        </div>
+      </div>
+
+      <div class="f c s">
+        <h3>Counts PCA Across Design Variables</h3>
+        <p>
+          This principal component plot uses variance-stabilized data to display
+          the way data naturally clusters. It is a projection of the
+          high-dimensional dataset down to the two dimensions in which the data
+          varies the most. Each dimension is some linear mixture of the original
+          variables and the numerical values of the principal components have no
+          inherent meaning. Multiple graphs are provided, with each identifying
+          a different experimental design variable using color.
+        </p>
+        <p>
+          In the ideal case, "control" and "treatment" clusters will be highly
+          separated (for some appropriate notion of "control" and "treatment"),
+          and different values of confounding variables will show up in all
+          clusters equally. In multivariate experiments the samples should most
+          obviously cluster according to "Comparison Cluster" variables, with
+          the rest of the variation according to the experimental conditions.
+        </p>
+        <p>
+          One of the most common discoveries from a PCA plot is the presence of
+          so-called "batch effects" which show up as differences between samples
+          of the same experimental condition that were analyzed in different
+          experiments or batches. These could be conducted on different days or
+          at a different iteration of the experiment but without varying the
+          methods or other variables that are expected to create different
+          outcomes. These effects are important to note as they could severy
+          reduce the significance of the final results of the analysis and could
+          be eliminated with a better experimental method. The statistical
+          models of this pipeline completely account for the batch effects
+          across values of confounding variables.
+        </p>
+        {{PCAPlots}}
+      </div>
+
+      <div class="f c s">
+        <h3>Gene Size Factor Distribution</h3>
+        <p>
+          This plot shows, for each sample, the distribution of the distances of
+          each count from the average. The distance is computed as the log of
+          the ratio of the count in a given sample over the average. The average
+          count is computed as the geometric mean of the counts of the gene
+          across all samples. Kernel density estimation is used to interpolate
+          the graph.
+        </p>
+        <p>
+          A core assumption of DESeq2 is that genes are not differentially
+          expressed across most of the samples, and so display a tight
+          distribution across zero (where the ratio is 1:1). Few genes (the
+          differentially expressed ones) will appear in the tails of the
+          distributions.
+        </p>
+        <p>
+          "Wide" distributions with large dispersion or "offset" distributions
+          with a non-zero average are causes for concern as they indicate the
+          analysis might not produce reliable data. It might be necessary to
+          remove the offending samples from the analysis.
+        </p>
+        <iframe
+          id="gene-size-factors"
+          srcdoc="{{sizeFactorQC}}"
+          style="width: 100%; aspect-ratio: 2/1"
+        ></iframe>
+      </div>
+
+      <h2>Contrasts</h2>
+
+      <div class="f s">
+        <select id="select-contrast-a" onchange="switchPlots()">
+          {{selectOptionsA}}
+        </select>
+        &nbsp;vs&nbsp;
+        <select id="select-contrast-b" onchange="switchPlots()">
+          {{selectOptionsB}}
+        </select>
+      </div>
+
+      <div class="f c s">
+        <h3>MA Plot</h3>
+        <p>
+          This plot below shows the distribution of genes with the largest and
+          smallest fold changes. In other words, it gives a rough overview of
+          how genes differentially expressed between your treatment and control
+          group.
+        </p>
+        {{maPlots}}
+      </div>
+
+      <div class="f c s">
+        <h3>Volcano Plot</h3>
+        <p>
+          This Volcano plot shows differences in gene expression between the
+          control and treatment for the selected experiment. The log ratio of
+          the fold change is on the X axis, and the negative log of p-value is
+          on the Y axis. Each dot represents a gene within the comparison
+          performed. The coloring on the dots reflects the clustering
+          information for each gene, and those in black are genes that do not
+          pass the parameters of the filter selected. Any genes of interest
+          provided to DESeq2 on Latch will be annotated.
+        </p>
+        {{volcanoPlots}}
+      </div>
+
+      <div class="f c s">
+        <h3>Variance/P-Value Plot</h3>
+        <p>
+          P-value distribution gives an idea on how well you model is capturing
+          the input data and as well whether it could be some problem for some
+          set of genes. In general, you expect to have a flat distribution with
+          peaks at 0 and 1. In this case, we add the mean count information to
+          check if any set of genes are enriched in any specific p-value range.
+          Variation (dispersion) and average expression relationship shouldn't
+          be a factor among the differentially expressed genes. When plotting
+          average mean and standard deviation, significant genes should be
+          randomly distributed.
+        </p>
+        {{variancePValuePlots}}
+      </div>
+    </div>
+    <script>
+      window.switchPlots = function () {
+        var selectA = document.getElementById("select-contrast-a").value;
+        var selectB = document.getElementById("select-contrast-b").value;
+
+        var allBOptions = document.querySelectorAll(
+          "#select-contrast-b > option"
+        );
+        for (var i = 0; i < allBOptions.length; ++i)
+          allBOptions[i].style.setProperty("display", "none");
+
+        var allMatchingOptions = document.querySelectorAll(
+          '#select-contrast-b > option[data-matches="' + selectA + '"]'
+        );
+        var bMatches = false;
+        for (var i = 0; i < allMatchingOptions.length; ++i) {
+          if (allMatchingOptions[i].value === selectB) bMatches = true;
+          allMatchingOptions[i].style.removeProperty("display");
+        }
+
+        if (!bMatches) {
+          selectB = allMatchingOptions[0].value;
+          document.getElementById("select-contrast-b").value = selectB;
+        }
+
+        var fullId = selectA + "_" + selectB;
+
+        var allPlots = document.querySelectorAll("[data-contrast]");
+        for (var i = 0; i < allPlots.length; ++i)
+          allPlots[i].style.setProperty("display", "none");
+
+        var plots = document.querySelectorAll(
+          '[data-contrast="' + fullId + '"]'
+        );
+        for (var i = 0; i < plots.length; ++i)
+          plots[i].style.removeProperty("display");
+      };
+
+      document.addEventListener("DOMContentLoaded", function () {
+        switchPlots();
+      });
+    </script>
+  </body>
+</html>
