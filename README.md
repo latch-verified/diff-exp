@@ -40,5 +40,3 @@ Latch Verified
 </h3>
 
 </html>
-
-## Workflow Anatomy
