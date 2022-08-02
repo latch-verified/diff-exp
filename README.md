@@ -1,6 +1,6 @@
 <html>
 <p align="center">
-  <img src="" alt="Latch Verified" width="250">
+  <img src="https://user-images.githubusercontent.com/31255434/182289305-4cc620e3-86ae-480f-9b61-6ca83283caa5.jpg" alt="Latch Verified" width="100">
 </p>
 
 <h1 align="center">
@@ -37,8 +37,6 @@ Latch Verified
   <a href="https://docs.latch.bio">SDK Documentation</a>
   <span> · </span>
   <a href="https://join.slack.com/t/latchbiosdk/shared_invite/zt-193ibmedi-WB6mBu2GJ2WejUHhxMOuwg">Slack Community</a>
-  <span> · </span>
-  <a href="https://latch.bio/sdk">Website</a>
 </h3>
 
 </html>

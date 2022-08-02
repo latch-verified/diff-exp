@@ -511,15 +511,6 @@ def deseq2_wf(
 
     __metadata__:
         display_name: DESeq2 (Differential Expression)
-        # documentation:
-        # author:
-        #     name:
-        #     email:
-        #     github:
-        # repository:
-        # license:
-        #     id:
-        # wiki_url:
         flow:
         - section: Counts Table
           flow:
@@ -712,30 +703,6 @@ if __name__ == "wf":
 
 if __name__ == "__main__":
     d = Path(__file__).parent
-
-    # deseq2_wf(
-    #     report_name="test",
-    #     raw_count_table=FlyteFile(
-    #         str(d / "../scratch/Gene_by_Sample_(pseudocount).csv")
-    #     ),
-    #     count_table_gene_id_column="",
-    #     output_location_type="custom",
-    #     output_location=FlyteDirectory(str(d / "../out")),
-    #     conditions_source="table",
-    #     # conditions_table=FlyteFile(
-    #     #     str(d / "../scratch/iPSC_WT_vs_DGS_vs_TBX1KO_design.csv")
-    #     # ),
-    #     # design_matrix_sample_id_column="sample_id",
-    #     # design_formula=[["condition", "explanatory"]],
-    #     conditions_table=FlyteFile(str(d / "../scratch/katja_params.csv")),
-    #     design_matrix_sample_id_column="sample",
-    #     design_formula=[
-    #         ["exp", "confounding"],
-    #         ["condition", "explanatory"],
-    #         ["stage", "cluster"],
-    #     ],
-    # )
-
     deseq2_wf(
         report_name="test",
         count_table_source="multiple",
