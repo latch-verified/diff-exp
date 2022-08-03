@@ -54,6 +54,9 @@ def_nucleus_endpoint := "https://nucleus." + def_environment
 @docker-push:
   docker push {{docker_image_full}}
 
+@print-full-docker-image-name:
+  echo {{docker_image_full}}
+
 @dbnp: docker-login docker-build docker-push
 
 #
@@ -61,6 +64,9 @@ def_nucleus_endpoint := "https://nucleus." + def_environment
 #
 
 register project=def_project endpoint=def_endpoint: docker-build docker-push
+  just only-register {{project}} {{endpoint}}
+
+only-register project=def_project endpoint=def_endpoint:
   docker run -i --rm \
     -e REGISTRY={{docker_registry}} \
     -e PROJECT={{project}} \
@@ -68,6 +74,7 @@ register project=def_project endpoint=def_endpoint: docker-build docker-push
     -e FLYTE_ADMIN_ENDPOINT={{endpoint}} \
     -e FLYTE_CLIENT_ID={{client_id}} \
     -e FLYTE_SECRET_PATH={{secret_path}} \
+    -e FLYTE_INTERNAL_IMAGE={{docker_image_full}} \
     {{docker_image_full}} make register
 
 test project=def_project endpoint=def_endpoint:
@@ -78,6 +85,7 @@ test project=def_project endpoint=def_endpoint:
     -e FLYTE_ADMIN_ENDPOINT={{endpoint}} \
     -e FLYTE_CLIENT_ID={{client_id}} \
     -e FLYTE_SECRET_PATH={{secret_path}} \
+    -e FLYTE_INTERNAL_IMAGE={{docker_image_full}} \
     -e AWS_ACCESS_KEY_ID={{env_var("AWS_ACCESS_KEY_ID")}} \
     -e AWS_SECRET_ACCESS_KEY={{env_var("AWS_SECRET_ACCESS_KEY")}} \
     {{docker_image_full}} make test

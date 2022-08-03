@@ -19,6 +19,9 @@ tryCatch(
     suppressMessages(suppressWarnings(library(plotly)))
 
     suppressMessages(suppressWarnings(library(purrr)))
+    suppressMessages(suppressWarnings(
+      library(data.table)
+    ))
   },
   error = function(err) {
     p("  Failed")
@@ -55,7 +58,6 @@ arg_confounding_columns <- args[4]
 arg_cluster_columns <- args[5]
 arg_counts_table <- args[6]
 arg_gene_id_column <- args[7]
-arg_goi <- args[8] # todo(maximsmol): make frontend-only
 arg_num_sig_genes <- args[9]
 arg_out_path <- args[10]
 
@@ -71,12 +73,21 @@ p("  Design matrix comparison cluster columns: '%s'", arg_cluster_columns)
 p("  Design matrix confounding columns: '%s'", arg_confounding_columns)
 p("  Counts table: %s", arg_counts_table)
 p("  Counts table gene ID column: '%s'", arg_gene_id_column)
-p("  Genes of interest: %s", arg_goi)
 p("  Number of significant genes: %s", arg_num_sig_genes)
 p("")
 
-sample_id_column <- vec_as_names(arg_sample_id_column, repair = "unique")
-gene_id_column <- vec_as_names(arg_gene_id_column, repair = "unique")
+if (arg_sample_id_column == "") {
+  arg_sample_id_column <- "V1"
+}
+if (arg_gene_id_column == "") {
+  arg_gene_id_column <- "V1"
+}
+
+sample_id_column <- make.names(arg_sample_id_column, unique = TRUE)
+gene_id_column <- make.names(arg_gene_id_column, unique = TRUE)
+
+p("Unique sample_id_column = %s", sample_id_column)
+p("Unique gene_id_column = %s", gene_id_column)
 
 p("Reading the design matrix")
 tryCatch(
@@ -128,19 +139,6 @@ head(cts)
 p("")
 
 genesOfInterest <- c()
-tryCatch(
-  {
-    p("Reading genes of interest")
-    genesSplit <- strsplit(arg_goi, ",")
-    genesOfInterest <- genesSplit[[1]]
-  },
-  error = function(err) {
-    p("  Failed")
-    p(err)
-    latch_error(list(source = "genesOfInterest", error = as.character(err)))
-    stop()
-  }
-)
 
 sigGenesNum <- 30
 tryCatch(
@@ -186,17 +184,28 @@ tryCatch(
   }
 )
 
-explanatory_columns <- str_split(arg_explanatory_columns, ",")[[1]] %>% str_trim()
-confounding_columns <- str_split(arg_confounding_columns, ",")[[1]] %>% str_trim()
-cluster_columns <- str_split(arg_cluster_columns, ",")[[1]] %>% str_trim()
 
-if (explanatory_columns[[1]] == "") {
+if (arg_explanatory_columns != "") {
+  explanatory_columns <- str_split(arg_explanatory_columns, ",")[[1]] %>%
+    str_trim() %>%
+    make.names(unique = TRUE)
+} else {
   explanatory_columns <- list()
 }
-if (confounding_columns[[1]] == "") {
+
+if (arg_confounding_columns != "") {
+  confounding_columns <- str_split(arg_confounding_columns, ",")[[1]] %>%
+    str_trim() %>%
+    make.names(unique = TRUE)
+} else {
   confounding_columns <- list()
 }
-if (cluster_columns[[1]] == "") {
+
+if (arg_cluster_columns != "") {
+  cluster_columns <- str_split(arg_cluster_columns, ",")[[1]] %>%
+    str_trim() %>%
+    make.names(unique = TRUE)
+} else {
   cluster_columns <- list()
 }
 
@@ -241,6 +250,8 @@ if (length(explanatory_columns) == 1 && length(cluster_columns) == 0) {
 
   design_column <- "autogen_group"
 }
+
+design_column <- design_column %>% make.names(unique = TRUE)
 
 p("Creating the DESeq2 dataset")
 tryCatch(

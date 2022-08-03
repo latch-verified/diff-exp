@@ -54,14 +54,6 @@ def csv_tsv_reader(f: TextIO):
     return csv.reader(f, dialect=dialect)
 
 
-def is_float(x: str):
-    try:
-        float(x)
-        return True
-    except ValueError:
-        return False
-
-
 @large_task
 def deseq2(
     report_name: str,
@@ -126,7 +118,7 @@ def deseq2(
                                 f" {line_idx}"
                             )
 
-                        line.extend([x for x in other_line[1:] if is_float(x)])
+                        line.extend(other_line[1:])
 
                     w.writerow(line)
             finally:
@@ -159,7 +151,6 @@ def deseq2(
         ">>> Parameters",
         f"Count table: '{count_table_remote}'",
         f"Report name: '{report_name}'",
-        f"Genes to Highlight: '{','.join([])}'",
         f"Number of Genes: '{str(number_of_genes_to_plot)}'",
         sep="\n",
     )
@@ -460,8 +451,8 @@ def deseq2_wf(
                     "_tmp_hack_deseq2": "counts_table",
                     "rules": [
                         {
-                            "regex": ".*\\.(csv|tsv|xlsx|txt)$",
-                            "message": "Expected a CSV, TSV, XLSX, or TXT file",
+                            "regex": r".*\.(csv|tsv|xlsx)$",
+                            "message": "Expected a CSV, TSV, or XLSX file",
                         }
                     ],
                 }
@@ -485,8 +476,8 @@ def deseq2_wf(
                     "_tmp_hack_deseq2": "design_matrix",
                     "rules": [
                         {
-                            "regex": r".*\.(csv|tsv|xlsx|txt)$",
-                            "message": "Expected a CSV, TSV, XLSX, or TXT file",
+                            "regex": r".*\.(csv|tsv|xlsx)$",
+                            "message": "Expected a CSV, TSV, or XLSX file",
                         }
                     ],
                 }
@@ -504,13 +495,22 @@ def deseq2_wf(
                 "_tmp_hack_deseq2_allow_clustering": True,
             }
         ),
-    ] = [["condition", "explanatory"]],
+    ] = [],
     number_of_genes_to_plot: int = 30,
 ) -> FlyteDirectory:
     r"""Estimate variance-mean dependence in count data from high-throughput sequencing assays and test for differential expression based on a model using the negative binomial distribution.
 
     __metadata__:
         display_name: DESeq2 (Differential Expression)
+        # documentation:
+        # author:
+        #     name:
+        #     email:
+        #     github:
+        # repository:
+        # license:
+        #     id:
+        # wiki_url:
         flow:
         - section: Counts Table
           flow:
@@ -703,6 +703,30 @@ if __name__ == "wf":
 
 if __name__ == "__main__":
     d = Path(__file__).parent
+
+    # deseq2_wf(
+    #     report_name="test",
+    #     raw_count_table=FlyteFile(
+    #         str(d / "../scratch/Gene_by_Sample_(pseudocount).csv")
+    #     ),
+    #     count_table_gene_id_column="",
+    #     output_location_type="custom",
+    #     output_location=FlyteDirectory(str(d / "../out")),
+    #     conditions_source="table",
+    #     # conditions_table=FlyteFile(
+    #     #     str(d / "../scratch/iPSC_WT_vs_DGS_vs_TBX1KO_design.csv")
+    #     # ),
+    #     # design_matrix_sample_id_column="sample_id",
+    #     # design_formula=[["condition", "explanatory"]],
+    #     conditions_table=FlyteFile(str(d / "../scratch/katja_params.csv")),
+    #     design_matrix_sample_id_column="sample",
+    #     design_formula=[
+    #         ["exp", "confounding"],
+    #         ["condition", "explanatory"],
+    #         ["stage", "cluster"],
+    #     ],
+    # )
+
     deseq2_wf(
         report_name="test",
         count_table_source="multiple",

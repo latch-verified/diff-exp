@@ -1,5 +1,7 @@
 # syntax = docker/dockerfile:1.4.1
 
+FROM 812206152185.dkr.ecr.us-west-2.amazonaws.com/lytectl:lytectl-cc67-kenny_lyte as flytectl
+
 FROM 812206152185.dkr.ecr.us-west-2.amazonaws.com/latch-base:02ab-main
 
 SHELL ["/usr/bin/env", "bash", "-c"]
@@ -139,7 +141,8 @@ RUN --mount=type=cache,target=/var/cache/renv,sharing=locked \
 #!/usr/bin/env Rscript
 source("/usr/local/lib/R/etc/RProfile.site")
 BiocManager::install(c(
-    "stringr"
+    "stringr",
+    "data.table"
   ), update=FALSE)
 EOF
 
@@ -147,19 +150,21 @@ EOF
 # Rest
 # >>>
 
-RUN pip install openpyxl requests
-RUN pip install lytekit lytekitplugins-pods dataclasses_json
+RUN pip install -U lytekit lytekitplugins-pods dataclasses_json
+RUN pip install openpyxl defusedxml requests
 
-COPY lytekit /root/lytekit
-RUN pip install /root/lytekit
+RUN pip install pytest
 
 COPY wf /root/wf
+COPY test.py /root
 WORKDIR /root
 
 COPY ./r_scripts ./r_scripts
 COPY ./template.html ./template.html
 
 COPY client_secret.txt /root/client_secret.txt
+
+COPY --from=flytectl /artifacts/flytectl /bin/flytectl
 
 ARG tag
 ENV FLYTE_INTERNAL_IMAGE $tag

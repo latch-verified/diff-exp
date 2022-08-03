@@ -11,7 +11,8 @@ read_tabular <- function(path) {
       read_excel(path)
     },
     error = function(cond) {
-      read_delim(path, trim_ws = TRUE)
+      fread(path, check.names = TRUE) %>%
+        as_tibble()
     }
   )
 }
