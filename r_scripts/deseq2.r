@@ -403,7 +403,7 @@ tryCatch(
         high = "#E84520",
         midpoint = min_cor + (max_cor - min_cor) / 2
       ),
-      label_names = c("Sample", "Sample", "Correlation"),
+      label_names = c("Sample 1", "Sample 2", "Correlation"),
       # dendrogram = "none", # todo(maximsmol): allow switching this
     ) %>%
       plotly_style() %>%

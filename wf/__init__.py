@@ -694,9 +694,9 @@ if __name__ == "wf":
             report_name="Test Data",
             conditions_source="table",
             conditions_table=FlyteFile(
-                "s3://latch-public/welcome/deseq2/conditions.csv"
+                "s3://latch-public/welcome/deseq2/design.csv"
             ),
-            design_matrix_sample_id_column="Sample Id",
+            design_matrix_sample_id_column="Sample",
             design_formula=[["Condition", "explanatory"]],
         ),
     )
