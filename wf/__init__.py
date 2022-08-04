@@ -704,19 +704,19 @@ def deseq2_wf(
 
 
 if __name__ == "wf":
-    LaunchPlan.create(
-        "deseq2_wf.Test Data",
-        deseq2_wf,
-        default_inputs=dict(
-            raw_count_table=FlyteFile("s3://latch-public/welcome/deseq2/counts.csv"),
-            raw_count_tables=[],
-            report_name="Test Data",
-            conditions_source="table",
-            conditions_table=FlyteFile("s3://latch-public/welcome/deseq2/design.csv"),
-            design_matrix_sample_id_column="Sample",
-            design_formula=[["Condition", "explanatory"]],
-        ),
-    )
+    # LaunchPlan.create(
+    #     "deseq2_wf.Test Data",
+    #     deseq2_wf,
+    #     default_inputs=dict(
+    #         raw_count_table=FlyteFile("s3://latch-public/welcome/deseq2/counts.csv"),
+    #         raw_count_tables=[],
+    #         report_name="Test Data",
+    #         conditions_source="table",
+    #         conditions_table=FlyteFile("s3://latch-public/welcome/deseq2/design.csv"),
+    #         design_matrix_sample_id_column="Sample",
+    #         design_formula=[["Condition", "explanatory"]],
+    #     ),
+    # )
     LaunchPlan.create(
         "deseq2_wf.(Foote, 2019) Human Fibroblasts",
         deseq2_wf,
