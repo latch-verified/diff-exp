@@ -693,8 +693,40 @@ if __name__ == "wf":
             raw_count_tables=[],
             report_name="Test Data",
             conditions_source="table",
+            conditions_table=FlyteFile("s3://latch-public/welcome/deseq2/design.csv"),
+            design_matrix_sample_id_column="Sample",
+            design_formula=[["Condition", "explanatory"]],
+        ),
+    )
+    LaunchPlan.create(
+        "deseq2_wf.(Foote, 2019) Human Fibroblasts",
+        deseq2_wf,
+        default_inputs=dict(
+            raw_count_table=FlyteFile(
+                "s3://latch-public/welcome/deseq2/galaxy/galaxy_counts.tsv"
+            ),
+            raw_count_tables=[],
+            report_name="(Foote, 2019) Human Fibroblasts DESeq2 Report",
+            conditions_source="table",
             conditions_table=FlyteFile(
-                "s3://latch-public/welcome/deseq2/design.csv"
+                "s3://latch-public/welcome/deseq2/galaxy/galaxy_design.csv"
+            ),
+            design_matrix_sample_id_column="Sample",
+            design_formula=[["Condition", "explanatory"]],
+        ),
+    )
+    LaunchPlan.create(
+        "deseq2_wf.(Knyazev, 2021) Inflammatory Bowel Diseases",
+        deseq2_wf,
+        default_inputs=dict(
+            raw_count_table=FlyteFile(
+                "s3://latch-public/welcome/deseq2/ibd/ibd_counts.csv"
+            ),
+            raw_count_tables=[],
+            report_name="(Knyazev, 2021) Inflammatory Bowel Diseases DESeq2 Report",
+            conditions_source="table",
+            conditions_table=FlyteFile(
+                "s3://latch-public/welcome/deseq2/ibd/ibd_design.csv"
             ),
             design_matrix_sample_id_column="Sample",
             design_formula=[["Condition", "explanatory"]],
