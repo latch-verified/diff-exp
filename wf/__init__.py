@@ -500,6 +500,25 @@ def deseq2_wf(
 ) -> FlyteDirectory:
     r"""Estimate variance-mean dependence in count data from high-throughput sequencing assays and test for differential expression based on a model using the negative binomial distribution.
 
+
+    Using RNA-seq to generate matrices of transcript and gene abundances has become
+    a staple technique for measuring cell state.[^1] Often it is desirable to use
+    statistical techniques to compare these count matrices across different
+    experimental conditions to reveal genes that change.[^2]
+
+    A software benchmark conducted by Costa Silva et. al revealed
+    [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) to be
+    the most performant. For each of a list of tools, reported significant genes were
+    compared against ground-truth genes derived from qRT-PCR, and DESeq2
+    consistently showed the highest
+    [sensitivity](https://en.wikipedia.org/wiki/Sensitivity_and_specificity) (TPR) and [accuracy](https://en.wikipedia.org/wiki/Accuracy_and_precision).
+
+    ![table](https://user-images.githubusercontent.com/31255434/182885594-e5986335-0f3a-484d-969a-306b02aa9d82.png)
+
+
+    [^1]: Stark, Rory; Grzelak, Marta; Hadfield, James (2019). RNA sequencing: the teenage years. Nature Reviews Genetics, (), –. doi:10.1038/s41576-019-0150-2
+    [^2]: Costa-Silva J, Domingues D, Lopes FM (2017) RNA-Seq differential expression analysis: An extended review and a software tool. PLoS ONE 12(12): e0190152. https://doi.org/10.1371/journal.pone.0190152
+
     __metadata__:
         display_name: DESeq2 (Differential Expression)
         documentation: https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58
