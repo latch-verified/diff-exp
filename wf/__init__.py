@@ -502,7 +502,7 @@ def deseq2_wf(
 
     __metadata__:
         display_name: DESeq2 (Differential Expression)
-        # documentation:
+        documentation: https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58
         # author:
         #     name:
         #     email:
@@ -510,7 +510,8 @@ def deseq2_wf(
         # repository:
         # license:
         #     id:
-        # wiki_url:
+        wiki_url: https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58
+        video_tutorial: https://www.loom.com/share/46d44143a3344860b48c2c3a5e566b63
         flow:
         - section: Counts Table
           flow:

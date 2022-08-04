@@ -403,7 +403,7 @@ tryCatch(
         high = "#E84520",
         midpoint = min_cor + (max_cor - min_cor) / 2
       ),
-      label_names = c("Sample", "Gene", "Correlation"),
+      label_names = c("Sample", "Sample", "Correlation"),
       # dendrogram = "none", # todo(maximsmol): allow switching this
     ) %>%
       plotly_style() %>%
@@ -459,7 +459,7 @@ tryCatch(
       fontsize_col = 7,
       column_text_angle = 60,
       scale_fill_gradient_fun = heatmap_colorscheme_around0,
-      label_names = c("Sample", "Gene", "Count Z-Score"),
+      label_names = c("Gene", "Sample", "Count Z-Score"),
       # dendrogram = "none", # todo(maximsmol): allow switching this
     ) %>%
       plotly_style() %>%
