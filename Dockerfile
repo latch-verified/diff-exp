@@ -62,20 +62,19 @@ RUN set -o errexit &&\
 COPY scripts/install_pkgs.R /tmp/install_pkgs.R
 RUN /tmp/install_pkgs.R
 
+RUN pip install openpyxl defusedxml requests
+RUN pip install pytest
+
+COPY ./r_scripts ./r_scripts
+COPY ./template.html ./template.html
+
 # >>>
 # Rest
 # >>>
 
-RUN pip install -U lytekit lytekitplugins-pods dataclasses_json
-RUN pip install openpyxl defusedxml requests
-RUN pip install pytest
-
+RUN pip install latch==1.13.3
 COPY wf /root/wf
-COPY test.py /root
-COPY ./r_scripts ./r_scripts
-COPY ./template.html ./template.html
 
-RUN pip install -U latch
 ARG tag
 ENV FLYTE_INTERNAL_IMAGE $tag
 WORKDIR /root
