@@ -76,11 +76,11 @@ def deseq2(
     if design_matrix_sample_id_column is None:
         design_matrix_sample_id_column = "sample_id"
 
-    if len(design_formula) == 0:
-        raise ValueError("design formula is empty")
-
     if conditions_source == "manual":
         design_formula = [["condition", "explanatory"]]
+
+    if len(design_formula) == 0:
+        raise ValueError("design formula is empty")
 
     design_formula_explanatory = []
     design_formula_confounding = []
