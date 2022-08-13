@@ -6,17 +6,11 @@ SHELL ["/usr/bin/env", "bash", "-c"]
 # wget - obvious
 # software-properties-common - `add-apt-repository`
 # dirmngr - GPG key manager, loads from `/etc/apt/trusted.gpg.d/`
-RUN set -o errexit &&\
-    apt-get update &&\
-    apt-get install --yes --no-install-recommends \
-    wget \
-    software-properties-common \
-    dirmngr
+RUN apt-get update --yes &&\
+    apt-get install --yes --no-install-recommends wget software-properties-common dirmngr
 
-RUN set -o errexit &&\
-    apt-get update &&\
-    apt-get install --yes --no-install-recommends \
-      pandoc
+RUN apt-get update &&\
+    apt-get install --yes --no-install-recommends pandoc
 
 #
 # R
@@ -25,16 +19,12 @@ RUN set -o errexit &&\
 # >>> Install R
 # https://cloud.r-project.org/bin/linux/debian/
 # https://github.com/rocker-org/rocker-versioned2/blob/f3325b2cf88d8899ddcb2f0945aa9f87ad150cd7/scripts/install_R_ppa.sh
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7' &&\
-    debian_codename=$(lsb_release --codename --short) &&\
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7'
+RUN debian_codename=$(lsb_release --codename --short) &&\
     add-apt-repository "deb https://cloud.r-project.org/bin/linux/debian ${debian_codename}-cran40/"
 
-RUN  set -o errexit &&\
-     apt-get update &&\
-     apt-get install --yes \
-       r-base \
-       r-base-dev \
-       locales &&\
+RUN apt-get update &&\
+     apt-get install --yes r-base r-base-dev locales &&\
      apt-mark hold r-base r-base-dev
 
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen &&\
@@ -52,12 +42,8 @@ RUN /tmp/install_renv.R
 
 
 # >>> R packages
-RUN set -o errexit &&\
-    apt-get update &&\
-    apt install --yes \
-      libcurl4-openssl-dev \
-      libxml2-dev \
-      libssl-dev
+RUN apt-get update &&\
+    apt install --yes libcurl4-openssl-dev libxml2-dev libssl-dev
 
 COPY scripts/install_pkgs.R /tmp/install_pkgs.R
 RUN /tmp/install_pkgs.R
