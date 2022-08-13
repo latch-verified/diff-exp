@@ -8,10 +8,11 @@ from io import SEEK_SET
 from pathlib import Path
 from typing import Annotated, List, Optional, TextIO, Tuple
 
-from flytekit import LaunchPlan, task, workflow
+from flytekit import task, workflow
 from flytekit.core.annotation import FlyteAnnotation
 from flytekitplugins.pod import Pod
 from kubernetes.client.models import V1Container, V1PodSpec, V1ResourceRequirements
+from latch.resources.launch_plan import LaunchPlan
 from latch.types import LatchDir, LatchFile
 from openpyxl import load_workbook
 from openpyxl.cell import Cell
@@ -702,54 +703,40 @@ def deseq2_wf(
     )
 
 
-if __name__ == "wf":
-    # LaunchPlan.create(
-    #     "deseq2_wf.Test Data",
-    #     deseq2_wf,
-    #     default_inputs=dict(
-    #         raw_count_table=LatchFile("s3://latch-public/welcome/deseq2/counts.csv"),
-    #         raw_count_tables=[],
-    #         report_name="Test Data",
-    #         conditions_source="table",
-    #         conditions_table=LatchFile("s3://latch-public/welcome/deseq2/design.csv"),
-    #         design_matrix_sample_id_column="Sample",
-    #         design_formula=[["Condition", "explanatory"]],
-    #     ),
-    # )
-    LaunchPlan.create(
-        "deseq2_wf.(Foote, 2019) Human Fibroblasts",
-        deseq2_wf,
-        default_inputs=dict(
-            raw_count_table=LatchFile(
-                "s3://latch-public/welcome/deseq2/galaxy/galaxy_counts.tsv"
-            ),
-            raw_count_tables=[],
-            report_name="(Foote, 2019) Human Fibroblasts DESeq2 Report",
-            conditions_source="table",
-            conditions_table=LatchFile(
-                "s3://latch-public/welcome/deseq2/galaxy/galaxy_design.csv"
-            ),
-            design_matrix_sample_id_column="Sample",
-            design_formula=[["Condition", "explanatory"]],
+LaunchPlan(
+    deseq2_wf,
+    "(Foote, 2019) Human Fibroblasts",
+    dict(
+        raw_count_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/galaxy/galaxy_counts.tsv"
         ),
-    )
-    LaunchPlan.create(
-        "deseq2_wf.(Knyazev, 2021) Inflammatory Bowel Diseases",
-        deseq2_wf,
-        default_inputs=dict(
-            raw_count_table=LatchFile(
-                "s3://latch-public/welcome/deseq2/ibd/ibd_counts.csv"
-            ),
-            raw_count_tables=[],
-            report_name="(Knyazev, 2021) Inflammatory Bowel Diseases DESeq2 Report",
-            conditions_source="table",
-            conditions_table=LatchFile(
-                "s3://latch-public/welcome/deseq2/ibd/ibd_design.csv"
-            ),
-            design_matrix_sample_id_column="Sample",
-            design_formula=[["Condition", "explanatory"]],
+        raw_count_tables=[],
+        report_name="(Foote, 2019) Human Fibroblasts DESeq2 Report",
+        conditions_source="table",
+        conditions_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/galaxy/galaxy_design.csv"
         ),
-    )
+        design_matrix_sample_id_column="Sample",
+        design_formula=[["Condition", "explanatory"]],
+    ),
+)
+LaunchPlan(
+    deseq2_wf,
+    "(Knyazev, 2021) Inflammatory Bowel Diseases",
+    dict(
+        raw_count_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/ibd/ibd_counts.csv"
+        ),
+        raw_count_tables=[],
+        report_name="(Knyazev, 2021) Inflammatory Bowel Diseases DESeq2 Report",
+        conditions_source="table",
+        conditions_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/ibd/ibd_design.csv"
+        ),
+        design_matrix_sample_id_column="Sample",
+        design_formula=[["Condition", "explanatory"]],
+    ),
+)
 
 
 if __name__ == "__main__":
