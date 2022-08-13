@@ -79,6 +79,9 @@ def deseq2(
     if len(design_formula) == 0:
         raise ValueError("design formula is empty")
 
+    if conditions_source == "manual":
+        design_formula = [["condition", "explanatory"]]
+
     design_formula_explanatory = []
     design_formula_confounding = []
     design_formula_cluster = []
