@@ -45,6 +45,9 @@ RUN /tmp/install_renv.R
 RUN apt-get update &&\
     apt install --yes libcurl4-openssl-dev libxml2-dev libssl-dev
 
+# Build lasso2 (DEGReport depen) from source bc no longer on CRAN
+RUN wget https://cran.r-project.org/src/contrib/Archive/lasso2/lasso2_1.2-22.tar.gz &&\
+    tar -xzvf lasso2_1.2-22.tar.gz
 COPY scripts/install_pkgs.R /tmp/install_pkgs.R
 RUN /tmp/install_pkgs.R
 

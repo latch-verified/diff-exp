@@ -5,6 +5,8 @@ if (!require("BiocManager", quietly = TRUE))
 BiocManager::install(version = "3.15")
 
 source("/usr/local/lib/R/etc/RProfile.site")
+install.packages("/root/lasso2", repos = NULL, type = "source")
+
 BiocManager::install(c(
     "DESeq2",
     "DEGreport",
