@@ -740,26 +740,3 @@ LaunchPlan(
         design_formula=[["Condition", "explanatory"]],
     ),
 )
-
-
-if __name__ == "__main__":
-    d = Path(__file__).parent
-
-    deseq2_wf(
-        report_name="test",
-        count_table_source="multiple",
-        raw_count_tables=[
-            LatchFile(str(d / "../scratch/garbage/counts (2).tsv")),
-            LatchFile(str(d / "../scratch/garbage/counts (3).tsv")),
-            LatchFile(str(d / "../scratch/garbage/counts (4).tsv")),
-        ],
-        count_table_gene_id_column="gene_id",
-        output_location_type="custom",
-        output_location=LatchDir(str(d / "../out")),
-        conditions_source="table",
-        conditions_table=LatchFile(str(d / "../scratch/garbage/silly_design.csv")),
-        design_matrix_sample_id_column="sample_id",
-        design_formula=[
-            ["cond", "explanatory"],
-        ],
-    )
