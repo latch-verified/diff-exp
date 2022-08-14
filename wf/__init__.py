@@ -161,7 +161,7 @@ def deseq2(
     output_loc = f"latch:///DESeq2 Results/{report_name.replace('/', '_')}"
     if output_location_type == "custom":
         assert output_location is not None
-        output_loc = output_location.remote_source
+        output_loc = output_location.remote_path
 
     print(f"Output location: '{output_loc}' [{output_location_type}]")
 
@@ -439,7 +439,7 @@ def deseq2(
                     f.write(data)
                     data = fr.read1()
 
-    return LatchDir(str(res_p.resolve()), remote_directory=output_loc)
+    return LatchDir(str(res_p.resolve()), remote_path=output_loc)
 
 
 @workflow
