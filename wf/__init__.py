@@ -8,10 +8,8 @@ from io import SEEK_SET
 from pathlib import Path
 from typing import Annotated, List, Optional, TextIO, Tuple
 
-from flytekit import task, workflow
 from flytekit.core.annotation import FlyteAnnotation
-from flytekitplugins.pod import Pod
-from kubernetes.client.models import V1Container, V1PodSpec, V1ResourceRequirements
+from latch import medium_task, workflow
 from latch.resources.launch_plan import LaunchPlan
 from latch.types import LatchDir, LatchFile
 from openpyxl import load_workbook
@@ -20,28 +18,6 @@ from openpyxl.utils.exceptions import InvalidFileException
 
 from wf.report_gen import generate_report
 from wf.util import error, message, warn, warning
-
-
-def _get_96_spot_pod() -> Pod:
-    """[ "c6i.24xlarge", "c5.24xlarge", "c5.metal", "c5d.24xlarge", "c5d.metal" ]"""
-
-    primary_container = V1Container(name="primary")
-    resources = V1ResourceRequirements(
-        requests={"cpu": "4", "memory": "12Gi"},
-        limits={"cpu": "4", "memory": "12Gi"},
-    )
-    primary_container.resources = resources
-
-    return Pod(
-        pod_spec=V1PodSpec(
-            containers=[primary_container],
-        ),
-        primary_container_name="primary",
-    )
-
-
-large_task = task(task_config=_get_96_spot_pod())
-
 
 sys.stdout.reconfigure(line_buffering=True)
 
@@ -54,7 +30,7 @@ def csv_tsv_reader(f: TextIO):
     return csv.reader(f, dialect=dialect)
 
 
-@large_task
+@medium_task
 def deseq2(
     report_name: str,
     count_table_source: str = "single",
