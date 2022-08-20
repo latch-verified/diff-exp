@@ -8,40 +8,16 @@ from io import SEEK_SET
 from pathlib import Path
 from typing import Annotated, List, Optional, TextIO, Tuple
 
-from flytekit import LaunchPlan, task, workflow
 from flytekit.core.annotation import FlyteAnnotation
-from flytekit.types.directory import FlyteDirectory
-from flytekit.types.file import FlyteFile
-from flytekitplugins.pod import Pod
-from kubernetes.client.models import V1Container, V1PodSpec, V1ResourceRequirements
+from latch import medium_task, workflow
+from latch.resources.launch_plan import LaunchPlan
+from latch.types import LatchDir, LatchFile
 from openpyxl import load_workbook
 from openpyxl.cell import Cell
 from openpyxl.utils.exceptions import InvalidFileException
 
 from wf.report_gen import generate_report
 from wf.util import error, message, warn, warning
-
-
-def _get_96_spot_pod() -> Pod:
-    """[ "c6i.24xlarge", "c5.24xlarge", "c5.metal", "c5d.24xlarge", "c5d.metal" ]"""
-
-    primary_container = V1Container(name="primary")
-    resources = V1ResourceRequirements(
-        requests={"cpu": "4", "memory": "12Gi"},
-        limits={"cpu": "4", "memory": "12Gi"},
-    )
-    primary_container.resources = resources
-
-    return Pod(
-        pod_spec=V1PodSpec(
-            containers=[primary_container],
-        ),
-        primary_container_name="primary",
-    )
-
-
-large_task = task(task_config=_get_96_spot_pod())
-
 
 sys.stdout.reconfigure(line_buffering=True)
 
@@ -54,27 +30,30 @@ def csv_tsv_reader(f: TextIO):
     return csv.reader(f, dialect=dialect)
 
 
-@large_task
+@medium_task
 def deseq2(
     report_name: str,
     count_table_source: str = "single",
-    raw_count_table: Optional[FlyteFile] = None,
-    raw_count_tables: List[FlyteFile] = [],
+    raw_count_table: Optional[LatchFile] = None,
+    raw_count_tables: List[LatchFile] = [],
     count_table_gene_id_column: Optional[str] = None,
     output_location_type: str = "default",
-    output_location: Optional[FlyteDirectory] = None,
+    output_location: Optional[LatchDir] = None,
     conditions_source: str = "manual",
     manual_conditions: List[List[str]] = [],
-    conditions_table: Optional[FlyteFile] = None,
+    conditions_table: Optional[LatchFile] = None,
     design_matrix_sample_id_column: Optional[str] = None,
     design_formula: List[List[str]] = [["condition", "explanatory"]],
     number_of_genes_to_plot: int = 30,
-) -> FlyteDirectory:
+) -> LatchDir:
     if count_table_gene_id_column is None:
         count_table_gene_id_column = "gene_id"
 
     if design_matrix_sample_id_column is None:
         design_matrix_sample_id_column = "sample_id"
+
+    if conditions_source == "manual":
+        design_formula = [["condition", "explanatory"]]
 
     if len(design_formula) == 0:
         raise ValueError("design formula is empty")
@@ -158,7 +137,7 @@ def deseq2(
     output_loc = f"latch:///DESeq2 Results/{report_name.replace('/', '_')}"
     if output_location_type == "custom":
         assert output_location is not None
-        output_loc = output_location.remote_source
+        output_loc = output_location.remote_path
 
     print(f"Output location: '{output_loc}' [{output_location_type}]")
 
@@ -436,7 +415,7 @@ def deseq2(
                     f.write(data)
                     data = fr.read1()
 
-    return FlyteDirectory(str(res_p.resolve()), remote_directory=output_loc)
+    return LatchDir(str(res_p.resolve()), remote_path=output_loc)
 
 
 @workflow
@@ -445,7 +424,7 @@ def deseq2_wf(
     count_table_source: str = "single",
     raw_count_table: Optional[
         Annotated[
-            FlyteFile,
+            LatchFile,
             FlyteAnnotation(
                 {
                     "_tmp_hack_deseq2": "counts_table",
@@ -459,10 +438,10 @@ def deseq2_wf(
             ),
         ]
     ] = None,
-    raw_count_tables: List[FlyteFile] = [],
+    raw_count_tables: List[LatchFile] = [],
     count_table_gene_id_column: str = "gene_id",
     output_location_type: str = "default",
-    output_location: Optional[FlyteDirectory] = None,
+    output_location: Optional[LatchDir] = None,
     conditions_source: str = "manual",
     manual_conditions: Annotated[
         List[List[str]],
@@ -470,7 +449,7 @@ def deseq2_wf(
     ] = [],
     conditions_table: Optional[
         Annotated[
-            FlyteFile,
+            LatchFile,
             FlyteAnnotation(
                 {
                     "_tmp_hack_deseq2": "design_matrix",
@@ -497,7 +476,7 @@ def deseq2_wf(
         ),
     ] = [],
     number_of_genes_to_plot: int = 30,
-) -> FlyteDirectory:
+) -> LatchDir:
     r"""Estimate variance-mean dependence in count data from high-throughput sequencing assays and test for differential expression based on a model using the negative binomial distribution.
 
 
@@ -703,97 +682,37 @@ def deseq2_wf(
     )
 
 
-if __name__ == "wf":
-    # LaunchPlan.create(
-    #     "deseq2_wf.Test Data",
-    #     deseq2_wf,
-    #     default_inputs=dict(
-    #         raw_count_table=FlyteFile("s3://latch-public/welcome/deseq2/counts.csv"),
-    #         raw_count_tables=[],
-    #         report_name="Test Data",
-    #         conditions_source="table",
-    #         conditions_table=FlyteFile("s3://latch-public/welcome/deseq2/design.csv"),
-    #         design_matrix_sample_id_column="Sample",
-    #         design_formula=[["Condition", "explanatory"]],
-    #     ),
-    # )
-    LaunchPlan.create(
-        "deseq2_wf.(Foote, 2019) Human Fibroblasts",
-        deseq2_wf,
-        default_inputs=dict(
-            raw_count_table=FlyteFile(
-                "s3://latch-public/welcome/deseq2/galaxy/galaxy_counts.tsv"
-            ),
-            raw_count_tables=[],
-            report_name="(Foote, 2019) Human Fibroblasts DESeq2 Report",
-            conditions_source="table",
-            conditions_table=FlyteFile(
-                "s3://latch-public/welcome/deseq2/galaxy/galaxy_design.csv"
-            ),
-            design_matrix_sample_id_column="Sample",
-            design_formula=[["Condition", "explanatory"]],
+LaunchPlan(
+    deseq2_wf,
+    "(Foote, 2019) Human Fibroblasts",
+    dict(
+        raw_count_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/galaxy/galaxy_counts.tsv"
         ),
-    )
-    LaunchPlan.create(
-        "deseq2_wf.(Knyazev, 2021) Inflammatory Bowel Diseases",
-        deseq2_wf,
-        default_inputs=dict(
-            raw_count_table=FlyteFile(
-                "s3://latch-public/welcome/deseq2/ibd/ibd_counts.csv"
-            ),
-            raw_count_tables=[],
-            report_name="(Knyazev, 2021) Inflammatory Bowel Diseases DESeq2 Report",
-            conditions_source="table",
-            conditions_table=FlyteFile(
-                "s3://latch-public/welcome/deseq2/ibd/ibd_design.csv"
-            ),
-            design_matrix_sample_id_column="Sample",
-            design_formula=[["Condition", "explanatory"]],
-        ),
-    )
-
-
-if __name__ == "__main__":
-    d = Path(__file__).parent
-
-    # deseq2_wf(
-    #     report_name="test",
-    #     raw_count_table=FlyteFile(
-    #         str(d / "../scratch/Gene_by_Sample_(pseudocount).csv")
-    #     ),
-    #     count_table_gene_id_column="",
-    #     output_location_type="custom",
-    #     output_location=FlyteDirectory(str(d / "../out")),
-    #     conditions_source="table",
-    #     # conditions_table=FlyteFile(
-    #     #     str(d / "../scratch/iPSC_WT_vs_DGS_vs_TBX1KO_design.csv")
-    #     # ),
-    #     # design_matrix_sample_id_column="sample_id",
-    #     # design_formula=[["condition", "explanatory"]],
-    #     conditions_table=FlyteFile(str(d / "../scratch/katja_params.csv")),
-    #     design_matrix_sample_id_column="sample",
-    #     design_formula=[
-    #         ["exp", "confounding"],
-    #         ["condition", "explanatory"],
-    #         ["stage", "cluster"],
-    #     ],
-    # )
-
-    deseq2_wf(
-        report_name="test",
-        count_table_source="multiple",
-        raw_count_tables=[
-            FlyteFile(str(d / "../scratch/garbage/counts (2).tsv")),
-            FlyteFile(str(d / "../scratch/garbage/counts (3).tsv")),
-            FlyteFile(str(d / "../scratch/garbage/counts (4).tsv")),
-        ],
-        count_table_gene_id_column="gene_id",
-        output_location_type="custom",
-        output_location=FlyteDirectory(str(d / "../out")),
+        raw_count_tables=[],
+        report_name="(Foote, 2019) Human Fibroblasts DESeq2 Report",
         conditions_source="table",
-        conditions_table=FlyteFile(str(d / "../scratch/garbage/silly_design.csv")),
-        design_matrix_sample_id_column="sample_id",
-        design_formula=[
-            ["cond", "explanatory"],
-        ],
-    )
+        conditions_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/galaxy/galaxy_design.csv"
+        ),
+        design_matrix_sample_id_column="Sample",
+        design_formula=[["Condition", "explanatory"]],
+    ),
+)
+LaunchPlan(
+    deseq2_wf,
+    "(Knyazev, 2021) Inflammatory Bowel Diseases",
+    dict(
+        raw_count_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/ibd/ibd_counts.csv"
+        ),
+        raw_count_tables=[],
+        report_name="(Knyazev, 2021) Inflammatory Bowel Diseases DESeq2 Report",
+        conditions_source="table",
+        conditions_table=LatchFile(
+            "s3://latch-public/welcome/deseq2/ibd/ibd_design.csv"
+        ),
+        design_matrix_sample_id_column="Sample",
+        design_formula=[["Condition", "explanatory"]],
+    ),
+)
