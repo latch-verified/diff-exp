@@ -95,6 +95,8 @@ tryCatch(
     coldata <- read_tabular(arg_design_matrix) %>%
       mutate(across(!all_of(sample_id_column), as.factor))
     samples <- make.names(coldata[[sample_id_column]])
+    # make sample column values safe
+    coldata[[sample_id_column]] <- samples
 
     # todo(maximsmol): allow releveling when/if we add support matters
     # mutate(condition = relevel(condition, "WT")) %>%
