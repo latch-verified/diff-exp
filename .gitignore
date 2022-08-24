@@ -31,3 +31,6 @@ id_rsa
 /scratch
 
 client_secret.txt
+
+.logs
+.latch_report.tar.gz
