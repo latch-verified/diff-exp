@@ -312,7 +312,16 @@ tryCatch(
     p("")
 
     p("Variance Stabilization Transform DDS")
-    vsd <- vst(dds)
+    vsd <- tryCatch(
+             {
+              vst(dds)
+             },
+             error = function(err) {
+               p(" Failed naive vsd transform")
+               p(" Attempting raw varianceStabilizingTransformation")
+               return(varianceStabilizingTransformation(dds))
+             }
+           )
     vsd_assay <- assay(vsd)
     print(vsd)
     p("")
