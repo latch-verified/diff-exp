@@ -220,7 +220,7 @@ def deseq2(
         pass
 
     if not excel_okay:
-        with raw_count_table_p.open("r") as f:
+        with raw_count_table_p.open("r", encoding="utf-8-sig") as f:
             sniff = csv.Sniffer()
             dialect = sniff.sniff(f.read(4000))
             f.seek(0, SEEK_SET)
@@ -285,7 +285,7 @@ def deseq2(
         pass
 
     if not excel_okay:
-        with conditions_table_p.open("r") as f:
+        with conditions_table_p.open("r", encoding="utf-8-sig") as f:
             sniff = csv.Sniffer()
             dialect = sniff.sniff(f.read(4000))
             f.seek(0, SEEK_SET)
