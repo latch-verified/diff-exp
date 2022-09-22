@@ -45,7 +45,11 @@ def deseq2(
     design_matrix_sample_id_column: Optional[str] = None,
     design_formula: List[List[str]] = [["condition", "explanatory"]],
     number_of_genes_to_plot: int = 30,
+    run_diff_expr: bool = True,
 ) -> LatchDir:
+    if not run_diff_expr:
+        return LatchDir("/root/wf/")
+
     if count_table_gene_id_column is None:
         count_table_gene_id_column = "gene_id"
 
@@ -476,6 +480,7 @@ def deseq2_wf(
         ),
     ] = [],
     number_of_genes_to_plot: int = 30,
+    run_diff_expr: bool = True,
 ) -> LatchDir:
     r"""Estimate variance-mean dependence in count data from high-throughput sequencing assays and test for differential expression based on a model using the negative binomial distribution.
 
@@ -679,6 +684,7 @@ def deseq2_wf(
         design_matrix_sample_id_column=design_matrix_sample_id_column,
         design_formula=design_formula,
         number_of_genes_to_plot=number_of_genes_to_plot,
+        run_diff_expr=run_diff_expr,
     )
 
 
