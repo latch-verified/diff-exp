@@ -46,6 +46,11 @@ def deseq2(
     design_formula: List[List[str]] = [["condition", "explanatory"]],
     number_of_genes_to_plot: int = 30,
 ) -> LatchDir:
+
+    # Hack until proper string conditionals exist on bulk
+    if conditions_source == "none":
+        return LatchDir("/root/wf")
+
     if count_table_gene_id_column is None:
         count_table_gene_id_column = "gene_id"
 
