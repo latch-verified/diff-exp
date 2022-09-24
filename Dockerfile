@@ -12,6 +12,9 @@ RUN apt-get update --yes &&\
 RUN apt-get update &&\
     apt-get install --yes --no-install-recommends pandoc
 
+RUN apt-get update &&\
+    apt-get install --yes libcurl4-openssl-dev libxml2-dev libssl-dev libgsl-dev
+
 #
 # R
 #
