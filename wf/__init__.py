@@ -24,7 +24,7 @@ sys.stdout.reconfigure(line_buffering=True)
 
 def csv_tsv_reader(f: TextIO):
     sniff = csv.Sniffer()
-    dialect = sniff.sniff(f.read(4000))
+    dialect = sniff.sniff(f.readline())
     f.seek(0, SEEK_SET)
 
     return csv.reader(f, dialect=dialect)
@@ -226,11 +226,7 @@ def deseq2(
 
     if not excel_okay:
         with raw_count_table_p.open("r", encoding="utf-8-sig") as f:
-            sniff = csv.Sniffer()
-            dialect = sniff.sniff(f.read(4000))
-            f.seek(0, SEEK_SET)
-
-            r = csv.DictReader(f, dialect=dialect)
+            r = csv_tsv_reader(f)
             for row in r:
                 items = row.items()
                 genes.add(row[count_table_gene_id_column])
@@ -291,11 +287,7 @@ def deseq2(
 
     if not excel_okay:
         with conditions_table_p.open("r", encoding="utf-8-sig") as f:
-            sniff = csv.Sniffer()
-            dialect = sniff.sniff(f.read(4000))
-            f.seek(0, SEEK_SET)
-
-            r = csv.DictReader(f, dialect=dialect)
+            r = csv_tsv_reader(f)
             for row in r:
                 items = row.items()
                 print(
