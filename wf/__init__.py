@@ -22,12 +22,15 @@ from wf.util import error, message, warn, warning
 sys.stdout.reconfigure(line_buffering=True)
 
 
-def csv_tsv_reader(f: TextIO):
+def csv_tsv_reader(f: TextIO, use_dict_reader: bool = False):
     sniff = csv.Sniffer()
     dialect = sniff.sniff(f.readline())
     f.seek(0, SEEK_SET)
 
-    return csv.reader(f, dialect=dialect)
+    if use_dict_reader:
+        return csv.DictReader(f, dialect=dialect)
+    else:
+        return csv.reader(f, dialect=dialect)
 
 
 @medium_task
@@ -226,7 +229,7 @@ def deseq2(
 
     if not excel_okay:
         with raw_count_table_p.open("r", encoding="utf-8-sig") as f:
-            r = csv_tsv_reader(f)
+            r = csv_tsv_reader(f, use_dict_reader=True)
             for row in r:
                 items = row.items()
                 genes.add(row[count_table_gene_id_column])
@@ -287,7 +290,7 @@ def deseq2(
 
     if not excel_okay:
         with conditions_table_p.open("r", encoding="utf-8-sig") as f:
-            r = csv_tsv_reader(f)
+            r = csv_tsv_reader(f, use_dict_reader=True)
             for row in r:
                 items = row.items()
                 print(
