@@ -22,6 +22,16 @@ from wf.util import error, message, warn, warning
 sys.stdout.reconfigure(line_buffering=True)
 
 
+def pull_gene_from_header(csv: Path) -> Optional[str]:
+    with open(csv) as f:
+        line = csv.readline()
+    f.seek(0, SEEK_SET)
+    try:
+        return line.split(",")[0]
+    except Exception:
+        return
+
+
 def csv_tsv_reader(f: TextIO, use_dict_reader: bool = False):
     sniff = csv.Sniffer()
     dialect = sniff.sniff(f.readline())
@@ -82,6 +92,7 @@ def deseq2(
             raise ValueError("Expected the single count table source to be set")
         count_table_remote = raw_count_table.remote_source
         raw_count_table_p = Path(raw_count_table)
+        count_table_gene_id_column = pull_gene_from_header(raw_count_table_p)
     else:
         raw_count_table_p = Path("combined_counts.csv")
         with raw_count_table_p.open("w") as f:
