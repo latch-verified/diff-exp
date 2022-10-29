@@ -22,12 +22,24 @@ from wf.util import error, message, warn, warning
 sys.stdout.reconfigure(line_buffering=True)
 
 
-def csv_tsv_reader(f: TextIO):
+def pull_gene_from_header(csv: Path) -> Optional[str]:
+    with open(csv) as f:
+        line = f.readline()
+    try:
+        return line.split(",")[0]
+    except Exception:
+        return
+
+
+def csv_tsv_reader(f: TextIO, use_dict_reader: bool = False):
     sniff = csv.Sniffer()
     dialect = sniff.sniff(f.readline())
     f.seek(0, SEEK_SET)
 
-    return csv.reader(f, dialect=dialect)
+    if use_dict_reader:
+        return csv.DictReader(f, dialect=dialect)
+    else:
+        return csv.reader(f, dialect=dialect)
 
 
 @medium_task
@@ -79,6 +91,7 @@ def deseq2(
             raise ValueError("Expected the single count table source to be set")
         count_table_remote = raw_count_table.remote_source
         raw_count_table_p = Path(raw_count_table)
+        count_table_gene_id_column = pull_gene_from_header(raw_count_table_p)
     else:
         raw_count_table_p = Path("combined_counts.csv")
         with raw_count_table_p.open("w") as f:
@@ -226,7 +239,7 @@ def deseq2(
 
     if not excel_okay:
         with raw_count_table_p.open("r", encoding="utf-8-sig") as f:
-            r = csv_tsv_reader(f)
+            r = csv_tsv_reader(f, use_dict_reader=True)
             for row in r:
                 items = row.items()
                 genes.add(row[count_table_gene_id_column])
@@ -287,7 +300,7 @@ def deseq2(
 
     if not excel_okay:
         with conditions_table_p.open("r", encoding="utf-8-sig") as f:
-            r = csv_tsv_reader(f)
+            r = csv_tsv_reader(f, use_dict_reader=True)
             for row in r:
                 items = row.items()
                 print(
