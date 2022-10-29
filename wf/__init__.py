@@ -24,8 +24,7 @@ sys.stdout.reconfigure(line_buffering=True)
 
 def pull_gene_from_header(csv: Path) -> Optional[str]:
     with open(csv) as f:
-        line = csv.readline()
-    f.seek(0, SEEK_SET)
+        line = f.readline()
     try:
         return line.split(",")[0]
     except Exception:
