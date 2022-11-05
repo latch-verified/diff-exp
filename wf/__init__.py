@@ -26,6 +26,7 @@ sys.stdout.reconfigure(line_buffering=True)
 # exported from excel
 functools.partial(open, encoding="utf-8-sig")
 
+csv.field_size_limit(sys.maxsize)
 
 def csv_tsv_reader(f: TextIO, use_dict_reader: bool = False):
     sniff = csv.Sniffer()
