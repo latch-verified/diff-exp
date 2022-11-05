@@ -1,4 +1,5 @@
 import csv
+import functools
 import json
 import subprocess
 import sys
@@ -21,14 +22,9 @@ from wf.util import error, message, warn, warning
 
 sys.stdout.reconfigure(line_buffering=True)
 
-
-def pull_gene_from_header(csv: Path) -> Optional[str]:
-    with open(csv) as f:
-        line = f.readline()
-    try:
-        return line.split(",")[0]
-    except Exception:
-        return
+# Strips byte order marks sometimes present at beginning of tabular files
+# exported from excel
+functools.partial(open, encoding="utf-8-sig")
 
 
 def csv_tsv_reader(f: TextIO, use_dict_reader: bool = False):
@@ -40,6 +36,12 @@ def csv_tsv_reader(f: TextIO, use_dict_reader: bool = False):
         return csv.DictReader(f, dialect=dialect)
     else:
         return csv.reader(f, dialect=dialect)
+
+
+def pull_gene_from_header(csv: Path) -> Optional[str]:
+    with open(csv) as f:
+        r = csv_tsv_reader(f)
+        return next(r)[0]
 
 
 @medium_task
@@ -238,7 +240,7 @@ def deseq2(
         pass
 
     if not excel_okay:
-        with raw_count_table_p.open("r", encoding="utf-8-sig") as f:
+        with raw_count_table_p.open("r") as f:
             r = csv_tsv_reader(f, use_dict_reader=True)
             for row in r:
                 items = row.items()
@@ -299,7 +301,7 @@ def deseq2(
         pass
 
     if not excel_okay:
-        with conditions_table_p.open("r", encoding="utf-8-sig") as f:
+        with conditions_table_p.open("r") as f:
             r = csv_tsv_reader(f, use_dict_reader=True)
             for row in r:
                 items = row.items()
