@@ -64,7 +64,7 @@ COPY ./template.html ./template.html
 # Rest
 # >>>
 
-RUN pip install latch
+RUN pip install latch==2.7.1
 COPY wf /root/wf
 
 ARG tag
