@@ -1,4 +1,4 @@
-FROM 812206152185.dkr.ecr.us-west-2.amazonaws.com/latch-base:6839-main
+FROM 812206152185.dkr.ecr.us-west-2.amazonaws.com/latch-base:9c8f-main
 
 SHELL ["/usr/bin/env", "bash", "-c"]
 
@@ -35,7 +35,7 @@ RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen &&\
     /usr/sbin/update-locale LANG="en_US.UTF-8"
 
 # Configure binary package caches
-RUN mkdir -p /usr/local/lib/R/etc/RProfile &&\ 
+RUN mkdir -p /usr/local/lib/R/etc/RProfile &&\
     echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))' > /usr/local/lib/R/etc/RProfile.site
 
 # Install renv
@@ -64,7 +64,7 @@ COPY ./template.html ./template.html
 # Rest
 # >>>
 
-RUN pip install latch==2.7.2
+RUN pip install latch==2.14.1
 COPY wf /root/wf
 
 ARG tag
