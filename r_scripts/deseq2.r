@@ -118,7 +118,7 @@ p("")
 tryCatch(
   {
     cts <- read_tabular(arg_counts_table) %>%
-      select(all_of(gene_id_column) | all_of(samples)) %>%
+      select(all_of(gene_id_column) | any_of(samples)) %>%
       mutate(
         across(
           !all_of(gene_id_column),
