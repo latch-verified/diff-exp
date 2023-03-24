@@ -277,7 +277,7 @@ tryCatch(
 
     ddsMat <- DESeqDataSetFromMatrix(
       cts %>%
-        select(all_of(gene_id_column) | all_of(samples)) %>%
+        select(all_of(gene_id_column) | any_of(samples)) %>%
         column_to_rownames(gene_id_column),
       coldata %>%
         column_to_rownames(sample_id_column),
