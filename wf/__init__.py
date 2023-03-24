@@ -1,18 +1,34 @@
 import csv
+from dataclasses import dataclass
 import functools
 import json
 import subprocess
 import sys
+from textwrap import dedent
 import typing
 import zipfile
 from io import SEEK_SET
 from pathlib import Path
-from typing import Annotated, List, Optional, TextIO, Tuple
+from typing import Annotated, Any, Dict, List, Optional, TextIO, Tuple
 
 from flytekit.core.annotation import FlyteAnnotation
 from latch import medium_task, workflow
 from latch.resources.launch_plan import LaunchPlan
-from latch.types import LatchDir, LatchFile
+from latch.types import (
+    LatchDir,
+    LatchFile,
+    LatchMetadata,
+    LatchAuthor,
+    LatchOutputDir,
+    LatchParameter,
+    LatchRule,
+    Section,
+    Fork,
+    ForkBranch,
+    Text,
+    Params,
+)
+from latch.types.metadata import FlowBase
 from openpyxl import load_workbook
 from openpyxl.cell import Cell
 from openpyxl.utils.exceptions import InvalidFileException
@@ -27,6 +43,7 @@ sys.stdout.reconfigure(line_buffering=True)
 functools.partial(open, encoding="utf-8-sig")
 
 csv.field_size_limit(sys.maxsize)
+
 
 def csv_tsv_reader(f: TextIO, use_dict_reader: bool = False):
     sniff = csv.Sniffer()
@@ -431,7 +448,178 @@ def deseq2(
     return LatchDir(str(res_p.resolve()), remote_path=output_loc)
 
 
-@workflow
+@dataclass(frozen=True)
+class ForkBranchDeseq2(ForkBranch):
+    _tmp_unwrap_optionals: Optional[List[str]] = None
+
+    def __init__(
+        self, display_name: str, _tmp_unwrap_optionals: List[str], *flow: FlowBase
+    ):
+        super().__init__(display_name, *flow)
+        object.__setattr__(self, "_tmp_unwrap_optionals", _tmp_unwrap_optionals)
+
+
+@dataclass
+class LatchParameterDeseq2(LatchParameter):
+    tmp_hack_deseq2: Optional[str] = None
+    add_button_title: Optional[str] = None
+
+    @property
+    def dict(self):
+        res: Dict[str, Any] = super().dict
+
+        # todo(maximsmol): add escape hatch to LatchParameter
+        if self.tmp_hack_deseq2 is not None:
+            res["__metadata__"]["_tmp_hack_deseq2"] = self.tmp_hack_deseq2
+
+        # todo(maximsmol): this should really be added to LatchParameter
+        if self.add_button_title is not None:
+            res["__metadata__"].setdefault("appearance", {})[
+                "add_button_title"
+            ] = self.add_button_title
+
+        return res
+
+
+@workflow(
+    metadata=LatchMetadata(
+        display_name="DESeq2 (Differential Expression)",
+        author=LatchAuthor(
+            name="LatchBio",
+            email="dev@latch.bio",
+            github="https://github.com/latch-verified",
+        ),
+        wiki_url="https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58",
+        documentation="https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58",
+        video_tutorial="https://www.loom.com/share/46d44143a3344860b48c2c3a5e566b63",
+        parameters={
+            "raw_count_table": LatchParameter(
+                display_name="Table File Path", batch_table_column=True
+            ),
+            "raw_count_tables": LatchParameter(
+                display_name="Table File Paths",
+                rules=[
+                    LatchRule(
+                        regex=r".*\.(csv|tsv)$", message="Expected a CSV or TSV file"
+                    )
+                ],
+            ),
+            "count_table_gene_id_column": LatchParameterDeseq2(
+                display_name="Gene ID Column", tmp_hack_deseq2="gene_id_column"
+            ),
+            "report_name": LatchParameter(
+                display_name="Report Name", batch_table_column=True
+            ),
+            "output_location_type": LatchParameter(display_name="Output Location"),
+            "output_location": LatchParameter(
+                display_name="Output Path", output=True, batch_table_column=True
+            ),
+            "conditions_source": LatchParameter(display_name="Design Matrix"),
+            "manual_conditions": LatchParameterDeseq2(add_button_title="Add Condition"),
+            "conditions_table": LatchParameter(
+                display_name="Design Matrix", batch_table_column=True
+            ),
+            "design_matrix_sample_id_column": LatchParameter(
+                display_name="Sample ID Column"
+            ),
+            "design_formula": LatchParameter(display_name="Design Formula"),
+            "number_of_genes_to_plot": LatchParameterDeseq2(
+                display_name="Number of Top Genes to Plot",
+                add_button_title="Number of Top Genes to Plot",
+            ),
+            "count_table_source": LatchParameter(),
+        },
+        flow=[
+            Section(
+                "Counts Table",
+                Fork(
+                    "count_table_source",
+                    "",
+                    single=ForkBranchDeseq2(
+                        "Single Table",
+                        ["raw_count_table"],
+                        Text(
+                            dedent(
+                                """
+                                Table of (pseudo-)counts where columns are samples and rows are genes
+                                - One of the columns must contain gene IDs
+                                - A subset or all of the remaining columns can be used as samples for analysis, depending on the design matrix
+                                """
+                            )
+                        ),
+                        Params("raw_count_table", "count_table_gene_id_column"),
+                    ),
+                    multiple=ForkBranch(
+                        "Combine Tables",
+                        Text(
+                            dedent(
+                                """
+                                Multiple tables of (pseudo-)counts where columns are samples and rows are genes
+                                - One of the columns must contain gene IDs
+                                - A subset or all of the remaining columns can be used as samples for analysis, depending on the design matrix
+                                - Tables will be merged row-wise (new samples will be added for each gene)
+                                - The first column of each table must be the gene identifier
+                                - The order of genes in each table must be exactly the same
+                                """
+                            )
+                        ),
+                        Params("raw_count_tables"),
+                    ),
+                ),
+            ),
+            Section(
+                "Sample Conditions (Control vs Treatment, etc.)",
+                Fork(
+                    "conditions_source",
+                    "",
+                    manual=ForkBranch("Manual Input", Params("manual_conditions")),
+                    table=ForkBranchDeseq2(
+                        "File",
+                        [
+                            "conditions_table",
+                            "design_matrix_sample_id_column",
+                            "design_formula",
+                        ],
+                        Text(
+                            dedent(
+                                """
+                                Table with sample IDs and experimental conditions
+                                """
+                            )
+                        ),
+                        Params(
+                            "conditions_table",
+                            "design_matrix_sample_id_column",
+                            "design_formula",
+                        ),
+                    ),
+                ),
+            ),
+            Section(
+                "Output Settings",
+                Params("report_name"),
+                Fork(
+                    "output_location_type",
+                    "",
+                    default=ForkBranch(
+                        "Default",
+                        Text(
+                            dedent(
+                                """
+                                In the data view, under
+                                `/DeSeq2 (Differential Expression)/{Report Name}`
+                                """
+                            )
+                        ),
+                    ),
+                    custom=ForkBranchDeseq2(
+                        "Custom", ["output_location"], Params("output_location")
+                    ),
+                ),
+            ),
+        ],
+    )
+)
 def deseq2_wf(
     report_name: str,
     count_table_source: str = "single",
@@ -454,7 +642,7 @@ def deseq2_wf(
     raw_count_tables: List[LatchFile] = [],
     count_table_gene_id_column: str = "gene_id",
     output_location_type: str = "default",
-    output_location: Optional[LatchDir] = None,
+    output_location: Optional[LatchOutputDir] = None,
     conditions_source: str = "manual",
     manual_conditions: Annotated[
         List[List[str]],
@@ -492,7 +680,6 @@ def deseq2_wf(
 ) -> LatchDir:
     r"""Estimate variance-mean dependence in count data from high-throughput sequencing assays and test for differential expression based on a model using the negative binomial distribution.
 
-
     Using RNA-seq to generate matrices of transcript and gene abundances has become
     a staple technique for measuring cell state.[^1] Often it is desirable to use
     statistical techniques to compare these count matrices across different
@@ -510,172 +697,6 @@ def deseq2_wf(
 
     [^1]: Stark, Rory; Grzelak, Marta; Hadfield, James (2019). RNA sequencing: the teenage years. Nature Reviews Genetics, (), –. doi:10.1038/s41576-019-0150-2
     [^2]: Costa-Silva J, Domingues D, Lopes FM (2017) RNA-Seq differential expression analysis: An extended review and a software tool. PLoS ONE 12(12): e0190152. https://doi.org/10.1371/journal.pone.0190152
-
-    __metadata__:
-        display_name: DESeq2 (Differential Expression)
-        documentation: https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58
-        # author:
-        #     name:
-        #     email:
-        #     github:
-        # repository:
-        # license:
-        #     id:
-        wiki_url: https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58
-        video_tutorial: https://www.loom.com/share/46d44143a3344860b48c2c3a5e566b63
-        flow:
-        - section: Counts Table
-          flow:
-            - fork: count_table_source
-              flows:
-                single:
-                    display_name: Single Table
-                    _tmp_unwrap_optionals:
-                        - raw_count_table
-                    flow:
-                        - text: >-
-                            Table of (pseudo-)counts where columns are samples and rows are genes
-
-                            - One of the columns must contain gene IDs
-
-                            - A subset or all of the remaining columns can be used as samples for analysis, depending on the design matrix
-                        - params:
-                            - raw_count_table
-                            - count_table_gene_id_column
-                multiple:
-                    display_name: Combine Tables
-                    flow:
-                        - text: >-
-                            Multiple tables of (pseudo-)counts where columns are samples and rows are genes
-
-                            - One of the columns must contain gene IDs
-
-                            - A subset or all of the remaining columns can be used as samples for analysis, depending on the design matrix
-
-                            - Tables will be merged row-wise (new samples will be added for each gene)
-
-                            - The first column of each table must be the gene identifier
-
-                            - The order of genes in each table must be exactly the same
-                        - params:
-                            - raw_count_tables
-        - section: Sample Conditions (Control vs Treatment, etc.)
-          flow:
-            - fork: conditions_source
-              flows:
-                manual:
-                    display_name: Manual Input
-                    flow:
-                    - params:
-                        - manual_conditions
-                table:
-                    display_name: File
-                    _tmp_unwrap_optionals:
-                        - conditions_table
-                        - design_matrix_sample_id_column
-                        - design_formula
-                    flow:
-                    - text: >-
-                        Table with sample IDs and experimental conditions
-                    - params:
-                        - conditions_table
-                        - design_matrix_sample_id_column
-                        - design_formula
-        - section: Output Settings
-          flow:
-          - params:
-            - report_name
-          - fork: output_location_type
-            flows:
-                default:
-                    display_name: Default
-                    flow:
-                    - text: >-
-                        In the data view, under
-                        `/DeSeq2 (Differential Expression)/{Report Name}`
-                custom:
-                    display_name: Custom
-                    _tmp_unwrap_optionals:
-                        - output_location
-                    flow:
-                    - params:
-                        - output_location
-
-    Args:
-        raw_count_table:
-
-          __metadata__:
-            display_name: Table File Path
-            appearance:
-                batch_table_column: true
-
-        raw_count_tables:
-
-          __metadata__:
-            display_name: Table File Paths
-            rules:
-                - regex: ".*\\.(csv|tsv)$"
-                  message: "Expected a CSV or TSV file"
-
-        count_table_gene_id_column:
-
-          __metadata__:
-            display_name: Gene ID Column
-            _tmp_hack_deseq2: gene_id_column
-
-        report_name:
-
-          __metadata__:
-            display_name: Report Name
-            appearance:
-                batch_table_column: true
-
-        output_location_type:
-
-          __metadata__:
-            display_name: Output Location
-
-        output_location:
-
-          __metadata__:
-            display_name: Output Path
-            output: true
-            appearance:
-                batch_table_column: true
-
-        conditions_source:
-
-          __metadata__:
-            display_name: Design Matrix
-
-        manual_conditions:
-
-          __metadata__:
-            appearance:
-              add_button_title: Add Condition
-
-        conditions_table:
-
-          __metadata__:
-            display_name: Design Matrix
-            appearance:
-                batch_table_column: true
-
-        design_matrix_sample_id_column:
-
-            __metadata__:
-              display_name: Sample ID Column
-
-        design_formula:
-
-            __metadata__:
-              display_name: Design Formula
-
-        number_of_genes_to_plot:
-          __metadata__:
-            display_name: Number of Top Genes to Plot
-            appearance:
-              add_button_title: Number of Top Genes to Plot
     """
 
     return deseq2(
