@@ -2,7 +2,7 @@ library(readr)
 library(readxl)
 
 p <- function(msg, ...) {
-  cat(sprintf(as.character(gsub("%", "%%", msg)), ...), sep = "\n")
+  cat(sprintf(as.character(msg), ...), sep = "\n")
 }
 
 read_tabular <- function(path) {

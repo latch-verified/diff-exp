@@ -25,7 +25,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     latch_error(list(source = "imports", error = as.character(err)))
     stop()
   }
@@ -104,14 +104,14 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     latch_error(list(source = "coldata read", error = as.character(err)))
     stop()
   }
 )
 
 dims <- dim(coldata)
-p(sprintf("Design Matrix %s x %s: [head]", dims[1], dims[2]))
+p("Design Matrix %s x %s: [head]", dims[1], dims[2])
 head(coldata)
 p("")
 
@@ -128,7 +128,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     latch_error(list(source = "cts read", error = as.character(err)))
     stop()
   }
@@ -136,7 +136,7 @@ tryCatch(
 
 p("Reading the counts table")
 dims <- dim(cts)
-p(sprintf("Counts Table %s x %s: [head]", dims[1], dims[2]))
+p("Counts Table %s x %s: [head]", dims[1], dims[2])
 head(cts)
 p("")
 
@@ -150,7 +150,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     latch_error(list(source = "sigGenesNum", error = as.character(err)))
     stop()
   }
@@ -179,7 +179,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     p("")
     p("")
     latch_warning(list(source = "size factor qc", error = as.character(err)))
@@ -270,8 +270,8 @@ tryCatch(
         design_column
       )
     }
-    p(sprintf("  Design formula: %s", design_formula))
-    p(sprintf("  Condition column: %s", design_column))
+    p("  Design formula: %s", design_formula)
+    p("  Condition column: %s", design_column)
     print(coldata[[design_column]])
     p("")
 
@@ -288,7 +288,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     latch_error(list(source = "ddsMat", error = as.character(err)))
     stop()
   }
@@ -332,7 +332,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     latch_error(list(source = "dds", error = as.character(err)))
     stop()
   }
@@ -374,8 +374,8 @@ tryCatch(
             saveWidgetCDN(op(sprintf("Plots/QC/PCA/%s.html", name)))
         },
         error = function(err) {
-          p(sprintf("  %s: failed", name))
-          p(err)
+          p("  %s: failed", name)
+          p("%s", err)
           p("")
           p("")
           latch_warning(list(source = "pca plot", error = as.character(err)))
@@ -385,7 +385,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     p("")
     p("")
     latch_warning(list(source = "pca plot outer loop", error = as.character(err)))
@@ -423,7 +423,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     p("")
     p("")
     latch_warning(list(source = "sample correlation qc", error = as.character(err)))
@@ -516,7 +516,7 @@ tryCatch(
   },
   error = function(err) {
     p("  Failed")
-    p(err)
+    p("%s", err)
     p("")
     p("")
     latch_warning(list(source = "count matrix heatmap", error = as.character(err)))
@@ -554,7 +554,7 @@ plotVolcano <- function(column_name) {
           tryCatch(
             {
               full <- sprintf("%s vs %s (%s)", g1, g2, column_name)
-              p(sprintf("Generating QC, MA, and Volcano Plot for %s vs %s", g1, g2))
+              p("Generating QC, MA, and Volcano Plot for %s vs %s", g1, g2)
 
               res <- results(dds, contrast = c(column_name, l1, l2))
 
@@ -577,7 +577,7 @@ plotVolcano <- function(column_name) {
                 },
                 error = function(err) {
                   p("  Failed")
-                  p(err)
+                  p("%s", err)
                   p("")
                   p("")
                   latch_warning(list(source = "variance pvalue qc", error = as.character(err)))
@@ -632,8 +632,8 @@ plotVolcano <- function(column_name) {
                 saveWidgetCDN(op(sprintf("Plots/Contrast/%s/Volcano.html", full)))
             },
             error = function(err) {
-              p(paste("", full, "Failed", sep = " "))
-              p(err)
+              p("  %s Failed", full)
+              p("%s", err)
               p("")
               p("")
               latch_warning(list(source = "volcano plot", error = as.character(err)))
@@ -644,7 +644,7 @@ plotVolcano <- function(column_name) {
     },
     error = function(err) {
       p("  Failed")
-      p(err)
+      p("%s", err)
       p("")
       p("")
       latch_warning(list(source = "volcano and ma plot generation", error = as.character(err)))
