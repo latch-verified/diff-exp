@@ -57,14 +57,14 @@ RUN /tmp/install_pkgs.R
 RUN pip install openpyxl defusedxml requests
 RUN pip install pytest
 
-COPY ./r_scripts ./r_scripts
-COPY ./template.html ./template.html
-
 # >>>
 # Rest
 # >>>
 
 RUN pip install latch==2.14.2
+
+COPY ./r_scripts ./r_scripts
+COPY ./template.html ./template.html
 COPY wf /root/wf
 
 ARG tag

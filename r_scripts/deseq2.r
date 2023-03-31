@@ -140,6 +140,11 @@ p("Counts Table %s x %s: [head]", dims[1], dims[2])
 head(cts)
 p("")
 
+p("Subsetting design matrix")
+coldata <- coldata %>%
+  filter(is.element(.data[[sample_id_column]], colnames(cts)))
+p("")
+
 genesOfInterest <- c()
 
 sigGenesNum <- 30
