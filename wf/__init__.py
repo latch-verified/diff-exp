@@ -492,6 +492,7 @@ class LatchParameterDeseq2(LatchParameter):
         wiki_url="https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58",
         documentation="https://www.latch.wiki/bulk-rna-seq-end-to-end#b2a4c0654d47450396ce094b1c70cb58",
         video_tutorial="https://www.loom.com/share/46d44143a3344860b48c2c3a5e566b63",
+        no_standard_bulk_execution=True,
         parameters={
             "raw_count_table": LatchParameter(
                 display_name="Table File Path", batch_table_column=True
