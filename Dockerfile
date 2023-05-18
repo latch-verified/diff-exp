@@ -61,7 +61,7 @@ RUN pip install pytest
 # Rest
 # >>>
 
-RUN pip install latch==2.17.0
+RUN pip install latch==2.19.11
 
 COPY ./r_scripts ./r_scripts
 COPY ./template.html ./template.html
