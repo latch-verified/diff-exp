@@ -612,7 +612,7 @@ class LatchParameterDeseq2(LatchParameter):
                     "",
                     manual=ForkBranch("Manual Input", Params("manual_conditions")),
                     table=ForkBranchDeseq2(
-                        "File",
+                        "File/Registry",
                         [
                             "conditions_table",
                             "design_matrix_sample_id_column",
