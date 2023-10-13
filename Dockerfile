@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:1.4.1
 FROM 812206152185.dkr.ecr.us-west-2.amazonaws.com/latch-base:9c8f-main
 
 SHELL ["/usr/bin/env", "bash", "-c"]
@@ -20,39 +21,23 @@ RUN apt-get update &&\
 #
 
 # >>> Install R
-# https://cloud.r-project.org/bin/linux/debian/
-# https://github.com/rocker-org/rocker-versioned2/blob/f3325b2cf88d8899ddcb2f0945aa9f87ad150cd7/scripts/install_R_ppa.sh
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7'
-RUN debian_codename=$(lsb_release --codename --short) &&\
-    add-apt-repository "deb https://cloud.r-project.org/bin/linux/debian ${debian_codename}-cran40/"
-
-RUN apt-get update &&\
-     apt-get install --yes r-base r-base-dev locales &&\
-     apt-mark hold r-base r-base-dev
-
-RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen &&\
-    locale-gen en_US.utf8 &&\
-    /usr/sbin/update-locale LANG="en_US.UTF-8"
-
-# Configure binary package caches
-RUN mkdir -p /usr/local/lib/R/etc/RProfile &&\
-    echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))' > /usr/local/lib/R/etc/RProfile.site
-
-# Install renv
-ENV RENV_PATHS_CACHE="/var/cache/renv"
-COPY scripts/install_renv.R /tmp/install_renv.R
-RUN /tmp/install_renv.R
-
+run wget https://github.com/r-lib/rig/releases/download/latest/rig-linux-latest.tar.gz
+run tar \
+    --extract \
+    --gunzip \
+    --file rig-linux-latest.tar.gz \
+    --directory /usr/local/
+run rm rig-linux-latest.tar.gz
+run rig add release
 
 # >>> R packages
-RUN apt-get update &&\
-    apt install --yes libcurl4-openssl-dev libxml2-dev libssl-dev
+env R_PKG_SYSREQS2="true"
+copy scripts/install_pkgs.R /tmp/install_pkgs.R
+run /tmp/install_pkgs.R
 
-# Build lasso2 (DEGReport depen) from source bc no longer on CRAN
-RUN wget https://cran.r-project.org/src/contrib/Archive/lasso2/lasso2_1.2-22.tar.gz &&\
+run wget https://cran.r-project.org/src/contrib/Archive/lasso2/lasso2_1.2-22.tar.gz && \
     tar -xzvf lasso2_1.2-22.tar.gz
-COPY scripts/install_pkgs.R /tmp/install_pkgs.R
-RUN /tmp/install_pkgs.R
+run R -e 'install.packages("/root/lasso2", repos = NULL, type = "source", update = FALSE)'
 
 RUN pip install openpyxl defusedxml requests
 RUN pip install pytest
@@ -61,7 +46,7 @@ RUN pip install pytest
 # Rest
 # >>>
 
-RUN pip install latch==2.19.11
+RUN pip install latch==2.32.8
 
 COPY ./r_scripts ./r_scripts
 COPY ./template.html ./template.html

@@ -8,6 +8,7 @@ from textwrap import dedent
 import typing
 import zipfile
 from io import SEEK_SET
+import re
 from pathlib import Path
 from typing import Annotated, Any, Dict, List, Optional, TextIO, Tuple
 
@@ -62,6 +63,9 @@ def pull_gene_from_header(csv: Path) -> Optional[str]:
         return next(r)[0]
 
 
+registry_table_re = re.compile(r"^latch://(\d+)\.table\.registry$")
+
+
 @medium_task
 def deseq2(
     report_name: str,
@@ -78,7 +82,6 @@ def deseq2(
     design_formula: List[List[str]] = [["condition", "explanatory"]],
     number_of_genes_to_plot: int = 30,
 ) -> LatchDir:
-
     # Hack until proper string conditionals exist on bulk
     if conditions_source == "none":
         return LatchDir("/root/wf")
@@ -179,8 +182,45 @@ def deseq2(
 
     print(f"Output location: '{output_loc}' [{output_location_type}]")
 
+    conditions_table_registry_id = None
+    if conditions_table is not None:
+        match = registry_table_re.match(conditions_table.remote_source)
+        if match is not None:
+            conditions_table_registry_id = match.group(1)
+
     conditions_table_p: Optional[Path] = None
-    if conditions_source == "table":
+    if conditions_table_registry_id is not None:
+        print(f"Design matrix registry table: '{conditions_table_registry_id}'")
+
+        from latch.registry.table import Table
+
+        columns = (
+            design_formula_explanatory
+            + design_formula_confounding
+            + design_formula_cluster
+        )
+
+        conditions_table_p = Path("conditions.csv")
+        with conditions_table_p.open("w") as f:
+            w = csv.DictWriter(f, fieldnames=[design_matrix_sample_id_column, *columns])
+            w.writeheader()
+
+            reg = Table(conditions_table_registry_id)
+            for page in reg.list_records():
+                for rec in page.values():
+                    sample_id = rec.get_name()
+                    vals = rec.get_values()
+
+                    if design_matrix_sample_id_column != "name":
+                        sample_id = vals[design_matrix_sample_id_column]
+
+                    w.writerow(
+                        {
+                            design_matrix_sample_id_column: sample_id,
+                        }
+                        | {k: vals[k] for k in columns if k in vals}
+                    )
+    elif conditions_source == "table":
         assert conditions_table is not None
         conditions_table_p = Path(conditions_table)
         print(f"Design matrix file: '{conditions_table.remote_source}'")
@@ -234,8 +274,10 @@ def deseq2(
                         {
                             "title": "Invalid gene ID column selected",
                             "body": [
-                                f"Gene ID column '{count_table_gene_id_column}'"
-                                " could not be found",
+                                (
+                                    f"Gene ID column '{count_table_gene_id_column}'"
+                                    " could not be found"
+                                ),
                                 {
                                     "section": "Available Columns:",
                                     "body": {"list": [str(h.value) for h in headers]},
@@ -292,8 +334,11 @@ def deseq2(
                         {
                             "title": "Invalid sample ID column selected",
                             "body": [
-                                f"Sample ID column '{design_matrix_sample_id_column}'"
-                                " could not be found",
+                                (
+                                    "Sample ID column"
+                                    f" '{design_matrix_sample_id_column}' could not be"
+                                    " found"
+                                ),
                                 {
                                     "section": "Available Columns:",
                                     "body": {"list": [str(h.value) for h in headers]},
@@ -539,31 +584,23 @@ class LatchParameterDeseq2(LatchParameter):
                     single=ForkBranchDeseq2(
                         "Single Table",
                         ["raw_count_table"],
-                        Text(
-                            dedent(
-                                """
+                        Text(dedent("""
                                 Table of (pseudo-)counts where columns are samples and rows are genes
                                 - One of the columns must contain gene IDs
                                 - A subset or all of the remaining columns can be used as samples for analysis, depending on the design matrix
-                                """
-                            )
-                        ),
+                                """)),
                         Params("raw_count_table", "count_table_gene_id_column"),
                     ),
                     multiple=ForkBranch(
                         "Combine Tables",
-                        Text(
-                            dedent(
-                                """
+                        Text(dedent("""
                                 Multiple tables of (pseudo-)counts where columns are samples and rows are genes
                                 - One of the columns must contain gene IDs
                                 - A subset or all of the remaining columns can be used as samples for analysis, depending on the design matrix
                                 - Tables will be merged row-wise (new samples will be added for each gene)
                                 - The first column of each table must be the gene identifier
                                 - The order of genes in each table must be exactly the same
-                                """
-                            )
-                        ),
+                                """)),
                         Params("raw_count_tables"),
                     ),
                 ),
@@ -575,19 +612,15 @@ class LatchParameterDeseq2(LatchParameter):
                     "",
                     manual=ForkBranch("Manual Input", Params("manual_conditions")),
                     table=ForkBranchDeseq2(
-                        "File",
+                        "File/Registry",
                         [
                             "conditions_table",
                             "design_matrix_sample_id_column",
                             "design_formula",
                         ],
-                        Text(
-                            dedent(
-                                """
+                        Text(dedent("""
                                 Table with sample IDs and experimental conditions
-                                """
-                            )
-                        ),
+                                """)),
                         Params(
                             "conditions_table",
                             "design_matrix_sample_id_column",
@@ -604,14 +637,10 @@ class LatchParameterDeseq2(LatchParameter):
                     "",
                     default=ForkBranch(
                         "Default",
-                        Text(
-                            dedent(
-                                """
+                        Text(dedent("""
                                 In the data view, under
                                 `/DeSeq2 (Differential Expression)/{Report Name}`
-                                """
-                            )
-                        ),
+                                """)),
                     ),
                     custom=ForkBranchDeseq2(
                         "Custom", ["output_location"], Params("output_location")
@@ -654,7 +683,7 @@ def deseq2_wf(
             LatchFile,
             FlyteAnnotation(
                 {
-                    "_tmp_hack_deseq2": "design_matrix",
+                    "_tmp_hack_deseq2": "design_matrix_registry",
                     "rules": [
                         {
                             "regex": r".*\.(csv|tsv|xlsx)$",

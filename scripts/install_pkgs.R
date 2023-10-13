@@ -1,32 +1,22 @@
 #!/usr/bin/env Rscript
 
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install(version = "3.15", ask = FALSE, update = FALSE)
-
-source("/usr/local/lib/R/etc/RProfile.site")
-install.packages("/root/lasso2", repos = NULL, type = "source", update = FALSE)
-
-BiocManager::install(c(
-    "DESeq2",
-    "DEGreport",
-    "ashr",
-
-    "rjson",
-
-    "purrr",
-    "vctrs",
-    "dplyr",
-    "tibble",
-    "readr",
-    "readxl",
-
-    "ggplot2",
-    "ggrepel",
-    "EnhancedVolcano",
-    "heatmaply",
-    "RColorBrewer",
-    "plotly",
-    "stringr",
-    "data.table"
-  ), update=FALSE)
+pak::pak(c(
+  "DESeq2",
+  "DEGreport",
+  "ashr",
+  "rjson",
+  "purrr",
+  "vctrs",
+  "dplyr",
+  "tibble",
+  "readr",
+  "readxl",
+  "ggplot2",
+  "ggrepel",
+  "EnhancedVolcano",
+  "heatmaply",
+  "RColorBrewer",
+  "plotly",
+  "stringr",
+  "data.table"
+))
